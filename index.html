@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weight Tracker Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #4361ee;
+      --primary-dark: #3a56d4;
+      --secondary: #ff6b6b;
+      --success: #06d6a0;
+      --dark: #121826;
+      --darker: #0d1119;
+      --light: #f8f9fa;
+      --gray: #6c757d;
+      --border: rgba(255, 255, 255, 0.1);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --glass: rgba(255, 255, 255, 0.05);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      --transition: all 0.3s ease;
+    }
+
+    [data-theme="light"] {
+      --dark: #f0f2f5;
+      --darker: #e4e7eb;
+      --light: #121826;
+      --gray: #6c757d;
+      --border: rgba(0, 0, 0, 0.1);
+      --card-bg: rgba(255, 255, 255, 0.7);
+      --glass: rgba(0, 0, 0, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--darker), var(--dark));
+      color: var(--light);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      transition: var(--transition);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo i {
+      font-size: 1.8rem;
+      color: var(--primary);
+    }
+
+    .logo h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+    }
+
+    .theme-toggle {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--light);
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+    }
+
+    .theme-toggle:hover {
+      transform: rotate(15deg);
+      box-shadow: var(--shadow);
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--glass);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
+
+    .progress-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .progress-circle {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .progress-bg {
+      fill: none;
+      stroke: var(--glass);
+      stroke-width: 8;
+    }
+
+    .progress-bar {
+      fill: none;
+      stroke: var(--primary);
+      stroke-width: 8;
+      stroke-linecap: round;
+      stroke-dasharray: 565;
+      stroke-dashoffset: 565;
+      transition: stroke-dashoffset 1s ease;
+    }
+
+    .progress-value {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--light);
+    }
+
+    .progress-label {
+      text-align: center;
+      font-size: 1rem;
+      color: var(--gray);
+      margin-top: -1rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .stat-card {
+      background: var(--glass);
+      border-radius: 12px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--gray);
+    }
+
+    .chart-container {
+      height: 250px;
+      margin-top: 1rem;
+    }
+
+    .input-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--gray);
+    }
+
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--light);
+      font-size: 1rem;
+      transition: var(--transition);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-top: 0.5rem;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+
+    .btn-secondary {
+      background: var(--glass);
+      color: var(--light);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-danger {
+      background: var(--secondary);
+    }
+
+    .btn-danger:hover {
+      background: #e55a5a;
+    }
+
+    .measurements-list {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-top: 1rem;
+      border-radius: 12px;
+      background: var(--glass);
+      padding: 0.5rem;
+    }
+
+    .measurement-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border);
+      transition: var(--transition);
+    }
+
+    .measurement-item:last-child {
+      border-bottom: none;
+    }
+
+    .measurement-item:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+    }
+
+    .measurement-date {
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    .measurement-value {
+      font-weight: 600;
+    }
+
+    .measurement-difference {
+      font-size: 0.8rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+    }
+
+    .positive {
+      background: rgba(6, 214, 160, 0.2);
+      color: var(--success);
+    }
+
+    .negative {
+      background: rgba(255, 107, 107, 0.2);
+      color: var(--secondary);
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--gray);
+    }
+
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard {
+        grid-template-columns: 1fr;
+      }
+      
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+      
+      header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <i class="fas fa-weight-scale"></i>
+        <h1>Weight Tracker Pro</h1>
+      </div>
+      <div class="theme-toggle" id="themeToggle">
+        <i class="fas fa-moon"></i>
+      </div>
+    </header>
+
+    <div class="dashboard">
+      <!-- Progress Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Your Progress</div>
+          <div class="card-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+        </div>
+        <div class="progress-container">
+          <svg class="progress-circle" viewBox="0 0 200 200">
+            <circle class="progress-bg" cx="100" cy="100" r="90"></circle>
+            <circle class="progress-bar" cx="100" cy="100" r="90"></circle>
+          </svg>
+          <div class="progress-value" id="progressValue">0%</div>
+        </div>
+        <div class="progress-label" id="progressLabel">Set target to track progress</div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="targetValue">--</div>
+            <div class="stat-label">Target Weight</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="currentValue">--</div>
+            <div class="stat-label">Current Weight</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="startValue">--</div>
+            <div class="stat-label">Starting Weight</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="differenceValue">--</div>
+            <div class="stat-label">Difference</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Weight Trend</div>
+          <div class="card-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="weightChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Target Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Set Target Weight</div>
+          <div class="card-icon">
+            <i class="fas fa-bullseye"></i>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="targetWeightInput">Target Weight (kg)</label>
+          <input type="number" id="targetWeightInput" placeholder="e.g. 70" step="0.1">
+        </div>
+        <button id="saveTargetBtn">
+          <i class="fas fa-save"></i> Save Target
+        </button>
+      </div>
+
+      <!-- Measurement Card -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Log Weight</div>
+          <div class="card-icon">
+            <i class="fas fa-plus-circle"></i>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="measuredWeightInput">Current Weight (kg)</label>
+          <input type="number" id="measuredWeightInput" placeholder="e.g. 75.5" step="0.1">
+        </div>
+        <button id="saveMeasuredBtn">
+          <i class="fas fa-plus"></i> Add Measurement
+        </button>
+        
+        <div class="card-header" style="margin-top: 1.5rem;">
+          <div class="card-title">Measurement History</div>
+          <div class="card-icon">
+            <i class="fas fa-history"></i>
+          </div>
+        </div>
+        <div class="measurements-list" id="measurementsList">
+          <div class="empty-state" id="emptyState">
+            <i class="fas fa-weight-scale"></i>
+            <p>No measurements yet</p>
+            <p>Add your first weight measurement</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button id="clearDataBtn" class="btn-danger">
+        <i class="fas fa-trash"></i> Clear All Data
+      </button>
+      <button id="exportDataBtn" class="btn-secondary">
+        <i class="fas fa-download"></i> Export Data
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const themeToggle = document.getElementById('themeToggle');
+    const progressValue = document.getElementById('progressValue');
+    const progressLabel = document.getElementById('progressLabel');
+    const progressBar = document.querySelector('.progress-bar');
+    const targetValue = document.getElementById('targetValue');
+    const currentValue = document.getElementById('currentValue');
+    const startValue = document.getElementById('startValue');
+    const differenceValue = document.getElementById('differenceValue');
+    const targetInput = document.getElementById('targetWeightInput');
+    const saveTargetBtn = document.getElementById('saveTargetBtn');
+    const measuredInput = document.getElementById('measuredWeightInput');
+    const saveMeasuredBtn = document.getElementById('saveMeasuredBtn');
+    const measurementsList = document.getElementById('measurementsList');
+    const clearBtn = document.getElementById('clearDataBtn');
+    const exportBtn = document.getElementById('exportDataBtn');
+    const emptyState = document.getElementById('emptyState');
+    
+    // Data
+    let targetWeight = parseFloat(localStorage.getItem('targetWeight'));
+    let measurements = JSON.parse(localStorage.getItem('measurements') || '[]');
+    if (typeof measurements === 'string') {
+      measurements = JSON.parse(measurements);
+    }
+    
+    // Chart initialization
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    let weightChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Weight (kg)',
+          data: [],
+          borderColor: '#4361ee',
+          backgroundColor: 'rgba(67, 97, 238, 0.1)',
+          borderWidth: 3,
+          tension: 0.3,
+          fill: true,
+          pointRadius: 4,
+          pointBackgroundColor: '#fff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          y: {
+            grid: {
+              color: 'rgba(255, 255, 255, 0.05)'
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              color: 'rgba(255, 255, 255, 0.7)'
+            }
+          }
+        }
+      }
+    });
+    
+    // Theme Toggle
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      themeToggle.innerHTML = newTheme === 'dark' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+      localStorage.setItem('theme', newTheme);
+    });
+    
+    // Initialize theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeToggle.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    
+    // Format date
+    function formatDate(date) {
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Calculate progress
+    function calculateProgress() {
+      if (!targetWeight || measurements.length === 0) {
+        progressValue.textContent = '0%';
+        progressLabel.textContent = 'Set target to track progress';
+        progressBar.style.strokeDashoffset = 565;
+        return;
+      }
+      
+      const startWeight = measurements[0].weight;
+      const currentWeight = measurements[measurements.length - 1].weight;
+      
+      // Calculate percentage towards goal
+      const totalDiff = startWeight - targetWeight;
+      const currentDiff = startWeight - currentWeight;
+      let percentage = (currentDiff / totalDiff) * 100;
+      
+      // Cap percentage between 0 and 100
+      percentage = Math.min(100, Math.max(0, percentage));
+      
+      // Update progress circle
+      const offset = 565 - (565 * percentage / 100);
+      progressBar.style.strokeDashoffset = offset;
+      progressValue.textContent = `${Math.round(percentage)}%`;
+      
+      // Update progress label
+      const remaining = currentWeight - targetWeight;
+      if (remaining > 0) {
+        progressLabel.textContent = `Lose ${remaining.toFixed(1)} kg to reach your goal`;
+      } else if (remaining < 0) {
+        progressLabel.textContent = `You're ${Math.abs(remaining).toFixed(1)} kg below your target!`;
+      } else {
+        progressLabel.textContent = 'Goal achieved! Congratulations!';
+      }
+      
+      // Update stats
+      targetValue.textContent = `${targetWeight} kg`;
+      currentValue.textContent = `${currentWeight} kg`;
+      startValue.textContent = `${startWeight} kg`;
+      
+      const diff = startWeight - currentWeight;
+      if (diff > 0) {
+        differenceValue.textContent = `-${diff.toFixed(1)} kg`;
+        differenceValue.style.color = '#06d6a0';
+      } else if (diff < 0) {
+        differenceValue.textContent = `+${Math.abs(diff).toFixed(1)} kg`;
+        differenceValue.style.color = '#ff6b6b';
+      } else {
+        differenceValue.textContent = '0 kg';
+        differenceValue.style.color = 'inherit';
+      }
+    }
+    
+    // Update chart
+    function updateChart() {
+      if (measurements.length === 0) {
+        return;
+      }
+      
+      const labels = measurements.map(m => formatDate(m.date));
+      const data = measurements.map(m => m.weight);
+      
+      weightChart.data.labels = labels;
+      weightChart.data.datasets[0].data = data;
+      weightChart.update();
+    }
+    
+    // Display measurements
+    function displayMeasurements() {
+      if (measurements.length === 0) {
+        emptyState.style.display = 'block';
+        measurementsList.innerHTML = '';
+        return;
+      }
+      
+      emptyState.style.display = 'none';
+      measurementsList.innerHTML = '';
+      
+      // Sort by date descending
+      const sortedMeasurements = [...measurements].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+      );
+      
+      // Display each measurement
+      sortedMeasurements.forEach((entry, index) => {
+        const measurementItem = document.createElement('div');
+        measurementItem.className = 'measurement-item';
+        
+        const prevWeight = index < sortedMeasurements.length - 1 ? 
+          sortedMeasurements[index + 1].weight : entry.weight;
+        const diff = entry.weight - prevWeight;
+        let diffHtml = '';
+        
+        if (diff !== 0) {
+          const diffClass = diff > 0 ? 'negative' : 'positive';
+          const diffSymbol = diff > 0 ? '+' : '';
+          diffHtml = `<span class="measurement-difference ${diffClass}">${diffSymbol}${diff.toFixed(1)} kg</span>`;
+        }
+        
+        measurementItem.innerHTML = `
+          <div>
+            <div class="measurement-date">${formatDate(entry.date)}</div>
+            ${index === 0 ? '<div class="measurement-difference" style="background: rgba(67, 97, 238, 0.2); color: #4361ee;">Latest</div>' : ''}
+          </div>
+          <div style="text-align: right;">
+            <div class="measurement-value">${entry.weight} kg</div>
+            ${diffHtml}
+          </div>
+        `;
+        
+        measurementsList.appendChild(measurementItem);
+      });
+    }
+    
+    // Save target weight
+    saveTargetBtn.addEventListener('click', () => {
+      const val = parseFloat(targetInput.value);
+      if (val > 0) {
+        targetWeight = val;
+        localStorage.setItem('targetWeight', val);
+        calculateProgress();
+        targetInput.value = '';
+      } else {
+        alert('Please enter a valid target weight.');
+      }
+    });
+    
+    // Save measured weight
+    saveMeasuredBtn.addEventListener('click', () => {
+      const val = parseFloat(measuredInput.value);
+      if (val > 0) {
+        measurements.push({ weight: val, date: new Date() });
+        localStorage.setItem('measurements', JSON.stringify(measurements));
+        measuredInput.value = '';
+        displayMeasurements();
+        calculateProgress();
+        updateChart();
+      } else {
+        alert('Please enter a valid weight measurement.');
+      }
+    });
+    
+    // Clear all data
+    clearBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+        localStorage.clear();
+        targetWeight = null;
+        measurements = [];
+        targetInput.value = '';
+        measuredInput.value = '';
+        displayMeasurements();
+        calculateProgress();
+        updateChart();
+      }
+    });
+    
+    // Export data
+    exportBtn.addEventListener('click', () => {
+      if (measurements.length === 0) {
+        alert('No data to export');
+        return;
+      }
+      
+      let csv = 'Date,Weight (kg)\n';
+      measurements.forEach(m => {
+        csv += `${formatDate(m.date)},${m.weight}\n`;
+      });
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'weight-tracker-data.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+    
+    // Initialize
+    function init() {
+      if (targetWeight) {
+        targetInput.value = targetWeight;
+      }
+      displayMeasurements();
+      calculateProgress();
+      updateChart();
+    }
+    
+    // Run initialization
+    init();
+  </script>
+</body>
+</html>
